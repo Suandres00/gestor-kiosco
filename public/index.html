@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg: #050510;
+            --card: #0f1020;
+            --blue: #00f3ff;
+            --pink: #bc13fe;
+            --green: #00ff9d;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+            background: var(--bg);
+            color: #fff;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+            border-bottom: 1px solid rgba(0, 243, 255, 0.2);
+            background: linear-gradient(90deg, rgba(0, 243, 255, 0.1), transparent);
+        }
+
+        .logo-area h1 {
+            margin: 0;
+            font-family: 'Orbitron';
+            color: var(--blue);
+            text-shadow: 0 0 10px var(--blue);
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        /* EL BOTÓN QUE TE FALTABA */
+        .btn-turno {
+            background: #333;
+            color: white;
+            border: 1px solid #555;
+            padding: 10px 20px;
+            font-family: 'Orbitron';
+            cursor: pointer;
+            border-radius: 4px;
+            transition: 0.3s;
+            font-weight: bold;
+        }
+
+        .btn-turno.abierto {
+            border-color: var(--green);
+            color: var(--green);
+            box-shadow: 0 0 10px rgba(0, 255, 157, 0.2);
+        }
+
+        .btn-turno.cerrado {
+            border-color: #ff4444;
+            color: #ff4444;
+            background: rgba(255, 68, 68, 0.1);
+        }
+
+        .btn-turno:hover {
+            filter: brightness(1.2);
+        }
+
+        .btn-historial {
+            background: transparent;
+            border: 1px solid var(--pink);
+            color: var(--pink);
+            padding: 10px 20px;
+            cursor: pointer;
+            font-family: 'Orbitron';
+            border-radius: 4px;
+            transition: 0.3s;
+        }
+
+        .btn-historial:hover {
+            background: var(--pink);
+            color: white;
+            box-shadow: 0 0 15px var(--pink);
+        }
+
+        .main {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            padding: 20px;
+            flex-grow: 1;
+            overflow: hidden;
+        }
+
+        .col-prod {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow: hidden;
+        }
+
+        .buscador {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #333;
+            padding: 15px;
+            color: white;
+            width: 100%;
+            border-radius: 5px;
+            font-family: 'Orbitron';
+            outline: none;
+        }
+
+        .grid-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 15px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            cursor: pointer;
+            transition: 0.3s;
+            border-radius: 5px;
+            position: relative;
+        }
+
+        .card:hover {
+            border-color: var(--blue);
+            transform: translateY(-3px);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+        }
+
+        .card h3 {
+            margin-top: 35px;
+            /* <--- ESTO ES LO IMPORTANTE: Baja el texto */
+            margin-bottom: 10px;
+            font-weight: normal;
+          
+            /* Opcional: Queda mejor centrado */
+            line-height: 1.2;
+            /* Para que no se separen mucho los renglones */
+        }
+
+        .price {
+            font-size: 1.4rem;
+            color: var(--blue);
+            font-family: 'Orbitron';
+            font-weight: bold;
+        }
+
+        .col-ticket {
+            background: rgba(15, 16, 32, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: -5px 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .ticket-list {
+            flex-grow: 1;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            border-bottom: 1px dashed #333;
+        }
+
+        .item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .total {
+            text-align: right;
+            font-size: 2rem;
+            font-family: 'Orbitron';
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-pay {
+            width: 100%;
+            padding: 20px;
+            background: linear-gradient(45deg, var(--blue), #00a8ff);
+            border: none;
+            font-family: 'Orbitron';
+            font-weight: bold;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn-pay:hover {
+            letter-spacing: 2px;
+            box-shadow: 0 0 20px var(--blue);
+        }
+
+        .btn-pay:disabled {
+            background: #333;
+            color: #555;
+            cursor: not-allowed;
+            box-shadow: none;
+            letter-spacing: normal;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
+
+        .modal-content {
+            background: var(--bg);
+            padding: 30px;
+            border: 1px solid var(--pink);
+            width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 0 30px rgba(188, 19, 254, 0.3);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: #666;
+            font-family: 'Orbitron';
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 5px 10px;
+        }
+
+        .tab-btn.active {
+            color: var(--pink);
+            border-bottom: 2px solid var(--pink);
+        }
+
+        .tabla {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .tabla th {
+            text-align: left;
+            padding: 10px;
+            border-bottom: 2px solid var(--pink);
+            color: var(--pink);
+            font-family: 'Orbitron';
+        }
+
+        .tabla td {
+            padding: 10px;
+            border-bottom: 1px solid #333;
+        }
+
+        .close {
+            float: right;
+            color: var(--pink);
+            font-size: 2rem;
+            cursor: pointer;
+        }
+
+        .btn-edit {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: transparent;
+            border: 1px solid var(--blue);
+            color: var(--blue);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .btn-edit:hover {
+            background: var(--blue);
+            color: black;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px;
+            background: #0f1020;
+            border: 1px solid #333;
+            color: white;
+            font-size: 1.1rem;
+            border-radius: 5px;
+            outline: none;
+        }
+
+        .btn-save {
+            width: 100%;
+            background: var(--pink);
+            border: none;
+            padding: 15px;
+            color: white;
+            font-family: 'Orbitron';
+            cursor: pointer;
+            font-size: 1.1rem;
+            margin-top: 10px;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 3px;
+        }
+
+        /* Botón de borrar (Tachito) */
+        .btn-delete {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            /* A la izquierda, lejos del lápiz */
+            background: transparent;
+            border: 1px solid #ff4444;
+            color: #ff4444;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            transition: 0.3s;
+        }
+
+        .btn-delete:hover {
+            background: #ff4444;
+            color: white;
+            box-shadow: 0 0 10px #ff4444;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <div class="logo-area">
+            <h1>M17 Kiosco</h1>
+        </div>
+        <div class="header-controls">
+            <input type="file" id="input-excel" style="display: none;" accept=".xlsx, .xls" onchange="subirExcel()">
+
+            <button class="btn-turno" style="border-color:#ffcc00; color:#ffcc00;"
+                onclick="document.getElementById('input-excel').click()">📂 EXCEL</button>
+
+            <button class="btn-turno" style="border-color:var(--green); color:var(--green);" onclick="abrirNuevo()">➕
+                NUEVO</button>
+            <button id="btn-estado-turno" class="btn-turno" onclick="gestionarTurno()">CARGANDO...</button>
+            <button class="btn-historial" onclick="abrirHistorial()">📜 HISTORIAL</button>
+            <button class="btn-turno" style="border-color:#ff4444; color:#ff4444;" onclick="borrarTodo()">🗑️
+                VACIAR</button>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="col-prod">
+            <input type="text" id="buscador" class="buscador" placeholder="BUSCAR PRODUCTO..."
+                onkeyup="filtrarProductos()">
+            <div id="grid-productos" class="grid-cards"></div>
+        </div>
+
+        <div class="col-ticket">
+            <h2 style="margin-top:0; font-family:'Orbitron'; color:#ddd;">TICKET</h2>
+            <div id="carrito-lista" class="ticket-list">
+                <p style="text-align: center; color: #666; margin-top: 50px;">EL TURNO DEBE ESTAR ABIERTO</p>
+            </div>
+            <div class="total">Total: $<span id="total-precio">0</span></div>
+            <button id="btn-pagar" class="btn-pay" onclick="finalizarVenta()" disabled>CONFIRMAR</button>
+        </div>
+    </div>
+
+    <div id="modal-historial" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="cerrarHistorial()">&times;</span>
+            <div class="tabs">
+                <button class="tab-btn active" onclick="verPestana('ventas')" id="tab-ventas">Ventas</button>
+                <button class="tab-btn" onclick="verPestana('turnos')" id="tab-turnos">Cierres de Caja</button>
+            </div>
+            <table class="tabla" id="tabla-ventas">
+                <thead>
+                    <tr>
+                        <th>HORA</th>
+                        <th>PRODUCTO</th>
+                        <th>TOTAL</th>
+                    </tr>
+                </thead>
+                <tbody id="lista-ventas"></tbody>
+            </table>
+            <table class="tabla" id="tabla-turnos" style="display:none;">
+                <thead>
+                    <tr>
+                        <th>INICIO</th>
+                        <th>FIN</th>
+                        <th>TOTAL</th>
+                    </tr>
+                </thead>
+                <tbody id="lista-turnos"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="modal-editar" class="modal">
+        <div class="modal-content" style="width: 400px;">
+            <span class="close" onclick="cerrarEditar()">&times;</span>
+            <h2 style="font-family:'Orbitron'; color:var(--blue);">Editar</h2>
+            <input type="hidden" id="edit-id">
+            <div class="form-group"><input type="text" id="edit-nombre" class="form-input" disabled></div>
+            <div class="form-group"><label>Stock:</label><input type="number" id="edit-stock" class="form-input"></div>
+            <div class="form-group"><label>Precio:</label><input type="number" id="edit-precio" class="form-input">
+            </div>
+            <button class="btn-save" onclick="guardarEdicion()">GUARDAR</button>
+        </div>
+    </div>
+
+    <div id="modal-nuevo" class="modal">
+        <div class="modal-content" style="width: 400px;">
+            <span class="close" onclick="cerrarNuevo()">&times;</span>
+            <h2 style="font-family:'Orbitron'; color:var(--green);">Nuevo Producto</h2>
+
+            <div class="form-group">
+                <label>Nombre del Producto:</label>
+                <input type="text" id="nuevo-nombre" class="form-input" placeholder="Ej: Coca Cola 2.5L">
+            </div>
+
+            <div class="form-group">
+                <label>Stock Inicial:</label>
+                <input type="number" id="nuevo-stock" class="form-input" value="0">
+            </div>
+
+            <div class="form-group">
+                <label>Precio:</label>
+                <input type="number" id="nuevo-precio" class="form-input" placeholder="$">
+            </div>
+
+            <button class="btn-save" style="background: var(--green);" onclick="guardarNuevo()">CREAR PRODUCTO</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
