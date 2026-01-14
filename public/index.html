@@ -491,6 +491,23 @@
         </div>
     </div>
 
+    <div id="modal-cobro" class="modal">
+    <div class="modal-content" style="width: 400px; text-align: center;">
+        <span class="close" onclick="cerrarCobro()">&times;</span>
+        <h2 style="font-family:'Orbitron'; color:white; margin-bottom: 30px;">SELECCIONAR PAGO</h2>
+        
+        <div style="display: grid; gap: 15px;">
+            <button onclick="procesarVenta('Efectivo')" class="btn-pay" style="background: linear-gradient(45deg, #00ff9d, #00b36b); color: black;">
+                💵 EFECTIVO (F1)
+            </button>
+            
+            <button onclick="procesarVenta('Tarjeta')" class="btn-pay" style="background: linear-gradient(45deg, #00f3ff, #007bb8); color: black;">
+                💳 TARJETA / MP (F2)
+            </button>
+        </div>
+    </div>
+</div>
+
     <script src="script.js"></script>
 </body>
 

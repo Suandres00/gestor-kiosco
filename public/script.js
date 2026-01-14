@@ -71,22 +71,32 @@ function renderizarProductos(lista) {
     lista.forEach(prod => {
         const div = document.createElement('div');
         div.className = 'card';
-        
-        // ESTA ES LA LINEA QUE SEGURO TE FALTABA (EL CLICK EN LA TARJETA)
         div.onclick = () => agregarAlCarrito(prod.id);
         
+        // --- LÓGICA DE ALERTA DE STOCK ---
+        let estiloStock = "color: gray;";
+        let textoStock = `Stock: ${prod.stock}`;
+        
+        if (prod.stock < 5) {
+            // Si hay poco, lo ponemos rojo, negrita y con un ícono de alerta
+            estiloStock = "color: #ff4444; font-weight: bold; text-shadow: 0 0 5px rgba(255, 68, 68, 0.3);";
+            textoStock = `⚠️ ÚLTIMOS: ${prod.stock}`;
+        }
+        // ---------------------------------
+
         div.innerHTML = `
             <button class="btn-delete" onclick="event.stopPropagation(); borrarProducto(${prod.id})">🗑️</button>
-            
             <button class="btn-edit" onclick="event.stopPropagation(); abrirEditar(${prod.id})">✏️</button>
             
             <h3>${prod.nombre}</h3>
             <div class="price">$${prod.precio}</div>
-            <div class="stock" style="color: gray;">Stock: ${prod.stock}</div>
+            
+            <div class="stock" style="${estiloStock}">${textoStock}</div>
         `;
         grid.appendChild(div);
     });
 }
+
 
 // --- CARRITO ---
 function agregarAlCarrito(id) {
@@ -152,20 +162,66 @@ function renderizarCarrito() {
     btnPagar.disabled = false;
 }
 
-async function finalizarVenta() {
-    if(!confirm("¿CONFIRMAR VENTA?")) return;
+// --- COBRO ---
+
+// 1. Abre la ventanita
+function finalizarVenta() {
+    if (carrito.length === 0) return;
+    document.getElementById('modal-cobro').style.display = 'flex';
+}
+
+function cerrarCobro() {
+    document.getElementById('modal-cobro').style.display = 'none';
+}
+
+// 2. Manda la venta al servidor
+async function procesarVenta(metodo) {
+    if(!confirm(`¿Confirmar cobro con ${metodo}?`)) return;
+
     try {
         const res = await fetch('/api/vender', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ carrito, turno_id: turnoActual.id })
+            body: JSON.stringify({ 
+                carrito, 
+                turno_id: turnoActual.id,
+                metodo: metodo // <--- Acá mandamos el dato nuevo
+            })
         });
+
         if (res.ok) {
-            carrito = []; renderizarCarrito(); cargarProductos();
-            alert("✅ Venta registrada!");
+            carrito = [];
+            renderizarCarrito();
+            cargarProductos();
+            cerrarCobro(); // Cerramos modal
+            alert("✅ Venta registrada: " + metodo);
+        } else {
+            alert("❌ Error al registrar venta");
         }
-    } catch (e) { console.error(e); }
+    } catch (error) { 
+        console.error(error); 
+    }
 }
+
+// 3. Atajos de teclado actualizados (F1 y F2 para cobrar)
+document.addEventListener('keydown', function(event) {
+    // Si la ventanita de cobro ESTÁ ABIERTA:
+    if (document.getElementById('modal-cobro').style.display === 'flex') {
+        if (event.key === 'F1') { event.preventDefault(); procesarVenta('Efectivo'); }
+        if (event.key === 'F2') { event.preventDefault(); procesarVenta('Tarjeta'); }
+        if (event.key === 'Escape') { cerrarCobro(); }
+        return; // Frenamos acá para no activar otras cosas
+    }
+
+    // Si la ventanita está CERRADA:
+    if (event.key === 'Enter') {
+        const btnPagar = document.getElementById('btn-pagar');
+        if (!btnPagar.disabled) {
+            event.preventDefault(); 
+            finalizarVenta(); // Esto ahora abre la ventanita
+        }
+    }
+});
 
 // --- BUSCADOR ---
 function filtrarProductos() {

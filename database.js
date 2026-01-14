@@ -1,5 +1,6 @@
 const sqlite3 = require('sqlite3').verbose();
-const db = new sqlite3.Database('./mi_negocio.db');
+// CAMBIAMOS EL NOMBRE ACÁ:
+const db = new sqlite3.Database('./kiosco_nuevo.db');
 
 db.serialize(() => {
   // 1. Tabla Productos
@@ -19,12 +20,13 @@ db.serialize(() => {
     estado TEXT DEFAULT 'abierto'
   )`);
 
-  // 3. Tabla Ventas (Ahora vinculada al Turno)
+
   db.run(`CREATE TABLE IF NOT EXISTS ventas (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     producto_id INTEGER,
     turno_id INTEGER,
     fecha DATETIME DEFAULT (datetime('now', 'localtime')),
+    metodo_pago TEXT, 
     total REAL
   )`);
 

@@ -64,30 +64,58 @@ app.get('/api/turnos/historial', (req, res) => {
     db.all("SELECT * FROM turnos WHERE estado = 'cerrado' ORDER BY id DESC LIMIT 20", [], (err, rows) => res.json(rows));
 });
 
-// --- RUTA DE VENTAS (MODIFICADA PARA TURNOS) ---
+// --- RUTA DE VENTAS (VERSIÓN ANTI-BLOQUEO) ---
+// --- RUTA DE VENTAS (VERSIÓN BLINDADA CON LOGS) ---
 app.post('/api/vender', (req, res) => {
-    const { carrito, turno_id } = req.body;
+    const { carrito, turno_id, metodo } = req.body;
+
+    // 1. Chusmeamos en la consola qué está llegando
+    console.log(`📦 Nueva venta: ${carrito.length} items. Pago: ${metodo}. Turno: ${turno_id}`);
 
     if (!turno_id) return res.status(400).json({ error: "Caja cerrada" });
 
+    // 2. Arrancamos la operación "todo o nada"
     db.serialize(() => {
-        const stmtStock = db.prepare("UPDATE productos SET stock = stock - ? WHERE id = ?");
-        const stmtVenta = db.prepare("INSERT INTO ventas (producto_id, turno_id, total) VALUES (?, ?, ?)");
-
         db.run("BEGIN TRANSACTION");
-        try {
-            carrito.forEach(item => {
-                stmtStock.run(item.cantidad, item.id);
-                stmtVenta.run(item.id, turno_id, item.precio * item.cantidad);
+
+        const stmtStock = db.prepare("UPDATE productos SET stock = stock - ? WHERE id = ?");
+        // Asegurate que la columna 'metodo_pago' exista en tu base de datos
+        const stmtVenta = db.prepare("INSERT INTO ventas (producto_id, turno_id, metodo_pago, total) VALUES (?, ?, ?, ?)");
+
+        let errorDetectado = null;
+
+        carrito.forEach(item => {
+            // Ejecutamos actualización de stock
+            stmtStock.run(item.cantidad, item.id, (err) => {
+                if (err) {
+                    console.error("❌ Error restando stock:", err.message);
+                    errorDetectado = err;
+                }
             });
-            db.run("COMMIT");
-            stmtStock.finalize();
-            stmtVenta.finalize();
-            res.json({ message: "Venta ok" });
-        } catch (error) {
-            db.run("ROLLBACK");
-            res.status(500).json({ error: "Error" });
-        }
+
+            // Ejecutamos registro de venta
+            stmtVenta.run(item.id, turno_id, metodo, item.precio * item.cantidad, (err) => {
+                if (err) {
+                    console.error("❌ Error guardando venta:", err.message);
+                    errorDetectado = err;
+                }
+            });
+        });
+
+        // Cerramos las preparaciones
+        stmtStock.finalize();
+        stmtVenta.finalize();
+
+        // 3. Confirmamos si salió todo bien
+        db.run("COMMIT", (err) => {
+            if (err || errorDetectado) {
+                console.error("💥 Algo falló, cancelando venta...");
+                db.run("ROLLBACK"); // Volvemos todo atrás
+                return res.status(500).json({ error: "Error en base de datos" });
+            }
+            console.log("✅ Venta guardada correctamente.");
+            res.json({ message: "Venta exitosa" });
+        });
     });
 });
 
